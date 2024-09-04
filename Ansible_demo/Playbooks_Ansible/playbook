@@ -1,0 +1,8 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: sudo apt upgrade && sudo upgrade -y
+    - name: install docker 
+      apt:  docker
+
