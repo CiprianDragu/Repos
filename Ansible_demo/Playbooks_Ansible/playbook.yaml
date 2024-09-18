@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: update apt repo and cache an all Debian/Ubuntu boxes
+      apt: update_cach=yes force_apt_=yes cach_valid_time=300
+
+    - name: upgrade all packages on servers
+      apt: upgrade=dis force_apt=yes
