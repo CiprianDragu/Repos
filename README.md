@@ -14,290 +14,271 @@ Docker and Docker Compose (for containerization)
 ├── deploy.yml
 └── README.md
 Scripts Overview
-1. system_info.sh (Bash Script)
-This script runs indefinitely, printing system information every x seconds.
- Dockerfile.bash
-Dockerfile for the Bash script.
-FROM ubuntu:latest
-
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
-    bash \
-    coreutils \
-    procps \
-    util-linux
-
-# Copy the Bash script
-COPY system_info.sh /system_info.sh
-
-# Set the entrypoint
-CMD ["/bin/bash", "/system_info.sh"]
-
- Dockerfile.python
-Dockerfile for the Python script.
-FROM python:3
-
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
-    procps \
-    lscpu \
-    psutil
-
-# Copy the Python script
-COPY system_info.py /system_info.py
-
-# Set the entrypoint
-CMD ["python", "/system_info.py"]
- docker-compose.yml
-This file defines the two services for the Bash and Python scripts.
-version: '3'
-
-services:
-  bash-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.bash
-    container_name: bash-container
-    restart: always
-    volumes:
-      - ./system_info.sh:/system_info.sh
-    command: /system_info.sh
-
-  python-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.python
-    container_name: python-container
-    restart: always
-    volumes:
-      - ./system_info.py:/system_info.py
-    command: python /system_info.py
-    Deployment Steps
-1. Install Ansible
-Ensure Ansible is installed on your local machine. Use the following command to install:
-sudo apt install ansible
- Set Up Ansible Inventory File
-Create an inventory file (hosts.ini) to specify the target server for deployment.
-
-Example hosts.ini:
-[servers]
-your-server-ip ansible_ssh_user=your-user
-
-Replace your-server-ip with the IP of your server, and your-user with the SSH user.
-
-3. Run the Ansible Playbook
-Execute the following command to deploy the application:
-ansible-playbook -i hosts.ini deploy.yml
 
 
-Here's the README.md file that includes everything you need to deploy the Bash and Python scripts using Docker, Docker Compose, and Ansible.
+# Script pentru Monitorizarea Sistemului
 
-Project: System Info Script Deployment with Docker, Docker Compose, and Ansible
-This project contains two scripts (one Bash and one Python) that run in infinite loops, printing system information such as the current date and time, OS details, CPU, RAM, and disk usage at regular intervals. The project uses Docker, Docker Compose, and Ansible for deployment.
+Acest script Python monitorizează informațiile esențiale ale sistemului, inclusiv data și ora curentă, sistemul de operare, CPU, RAM și spațiul pe disc. Scriptul rulează într-o buclă infinită și afișează aceste informații la intervale specificate.
 
-Prerequisites
-Before running the deployment, ensure the following are installed on your local machine:
+## Dependențe
 
-Ansible (for automation)
-Docker and Docker Compose (for containerization)
-Project Structure
-bash
-Copy code
-/path/to/your/project
-│
-├── Dockerfile.bash
-├── Dockerfile.python
-├── system_info.sh
-├── system_info.py
-├── docker-compose.yml
-├── deploy.yml
-└── README.md
-Scripts Overview
-1. system_info.sh (Bash Script)
-This script runs indefinitely, printing system information every x seconds.
+- Python
+- psutil
 
-bash
-Copy code
+Pentru a instala biblioteca `psutil`, folosiți comanda:
+```bash
+pip install psutil
+
+
+
+
+Utilizare
+Salvați scriptul Python în directorul dorit.
+
+Asigurați-vă că aveți toate dependențele necesare instalate.
+
+Rulați scriptul folosind comanda:
+python nume_script.py
+Script
+import time
+import platform
+import psutil
+from datetime import datetime
+
+# Interval de așteptare 
+interval = 5
+
+# Bucla infinită
+while True:
+    # Afișăm data și ora curentă
+    print("Data și ora curentă:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    # Informații despre sistemul de operare
+    print("Sistem de operare:", platform.system())
+    print("Versiune kernel:", platform.release())
+    
+    # Informații despre CPU
+    print("CPU:", platform.processor())
+    
+    # Informații despre RAM (total și utilizat)
+    ram_total = psutil.virtual_memory().total / (1024**3)  # GB
+    ram_used = psutil.virtual_memory().used / (1024**3)    # GB
+    print(f"Memorie RAM - Total: {ram_total:.2f} GB, Utilizat: {ram_used:.2f} GB")
+    
+    # Informații despre disk (total și disponibil)
+    disk_total = psutil.disk_usage('/').total / (1024**3)  # GB
+    disk_used = psutil.disk_usage('/').used / (1024**3)    # GB
+    print(f"Spațiu disk - Total: {disk_total:.2f} GB, Utilizat: {disk_used:.2f} GB")
+    
+    # Linie de separare
+    print("-------------------------------------------")
+    
+    # Așteptăm pentru intervalul specificat
+    time.sleep(interval)
+
+# System Monitoring Script
+
+This Bash script monitors essential system information, including the current date and time, operating system details, CPU, RAM, and disk space. The script runs in an infinite loop and displays these details at specified intervals.
+
+## Usage
+
+1. Save the Bash script to your desired directory and make it executable:
+```bash
+chmod +x script_name.sh
+
+./script_name.sh
+
+Script
 #!/bin/bash
 
-# Set the wait time (e.g., 5 seconds)
-interval=5
+# Set the interval in seconds 
+interval=3
 
 # Infinite loop
 while true; do
-    # Print current date and time
+    # Display the current date and time
     echo "Current date and time: $(date)"
 
-    # OS information
+    # Operating system information
     echo "Operating System: $(uname -o)"
-    echo "Kernel version: $(uname -r)"
+    echo "Kernel Version: $(uname -r)"
     
     # CPU information
     echo "CPU: $(lscpu | grep 'Model name' | awk -F': ' '{print $2}')"
     
-    # RAM usage
+    # RAM information (total and used)
     ram_total=$(free -h | grep 'Mem:' | awk '{print $2}')
     ram_used=$(free -h | grep 'Mem:' | awk '{print $3}')
     echo "RAM - Total: $ram_total, Used: $ram_used"
 
-    # Disk usage
+    # Disk information (total and used)
     disk_total=$(df -h / | grep '/' | awk '{print $2}')
     disk_used=$(df -h / | grep '/' | awk '{print $3}')
-    echo "Disk space - Total: $disk_total, Used: $disk_used"
+    echo "Disk Space - Total: $disk_total, Used: $disk_used"
     
     # Separator line
-    echo "-------------------------------------------"
+    echo "**************************************************"
     
     # Wait for the specified interval
     sleep $interval
 done
-2. system_info.py (Python Script)
-This Python script runs in an infinite loop, displaying similar system information.
 
-python
-Copy code
-import os
-import time
-import psutil
-from datetime import datetime
+Dockerfile pentru scriptul Bash (folosind Ubuntu ca imagine de bază)
+Creează un fișier numit Dockerfile.bash pentru imaginea bazată pe Ubuntu.
 
-# Set the interval (e.g., 5 seconds)
-interval = 5
+Adaugă următorul conținut în acest fișier:
 
-# Infinite loop
-while True:
-    # Print current date and time
-    print(f"Current date and time: {datetime.now()}")
-
-    # OS information
-    print(f"Operating System: {os.uname()}")
-    
-    # CPU information
-    print(f"CPU: {os.popen('lscpu | grep "Model name"').read().strip()}")
-
-    # RAM usage
-    mem = psutil.virtual_memory()
-    print(f"RAM - Total: {mem.total / (1024 ** 3):.2f} GB, Used: {mem.used / (1024 ** 3):.2f} GB")
-
-    # Disk usage
-    disk = psutil.disk_usage('/')
-    print(f"Disk space - Total: {disk.total / (1024 ** 3):.2f} GB, Used: {disk.used / (1024 ** 3):.2f} GB")
-    
-    # Separator line
-    print("-------------------------------------------")
-    
-    # Wait for the specified interval
-    time.sleep(interval)
-3. Dockerfile.bash
-Dockerfile for the Bash script.
-
-Dockerfile
-Copy code
+# Dockerfile.bash
 FROM ubuntu:latest
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
-    bash \
-    coreutils \
-    procps \
-    util-linux
+# Instalează pachetele necesare pentru a rula scriptul Bash
+RUN apt-get update && \
+    apt-get install -y bash lsb-release procps
 
-# Copy the Bash script
+# Creează și copiază scriptul Bash în container
 COPY system_info.sh /system_info.sh
 
-# Set the entrypoint
-CMD ["/bin/bash", "/system_info.sh"]
-4. Dockerfile.python
-Dockerfile for the Python script.
+# Asigură-te că scriptul are permisiuni de execuție
+RUN chmod +x /system_info.sh
 
-Dockerfile
-Copy code
+# Rulează scriptul ca și comandă principală
+CMD ["/system_info.sh"]
+
+Creează fișierul system_info.sh în același director, apoi copiază și lipește scriptul Bash din mesajele anterioare.
+
+Construiește imaginea Docker pentru acest fișier Dockerfile:
+docker build -f Dockerfile.bash -t bash-system-info .
+
+Pornește containerul:
+
+docker run --name bash-container -d bash-system-info
+
+Vizualizează logurile containerului pentru a verifica ieșirea scriptului:
+docker logs -f bash-container
+
+Dockerfile pentru scriptul Python (folosind Python ca imagine de bază)
+Creează un fișier numit Dockerfile.python pentru imaginea bazată pe Python.
+
+Adaugă următorul conținut în acest fișier:
+
+
+# Dockerfile.python
 FROM python:3
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
-    procps \
-    lscpu \
-    psutil
+# Instalează pachetul psutil necesar pentru scriptul Python
+RUN pip install psutil
 
-# Copy the Python script
+# Creează și copiază scriptul Python în container
 COPY system_info.py /system_info.py
 
-# Set the entrypoint
+# Rulează scriptul Python ca și comandă principală
 CMD ["python", "/system_info.py"]
-5. docker-compose.yml
-This file defines the two services for the Bash and Python scripts.
 
-yaml
-Copy code
-version: '3'
+Creează fișierul system_info.py în același director, apoi copiază și lipește scriptul Python din mesajele anterioare.
+
+Construiește imaginea Docker pentru acest fișier Dockerfile:
+docker build -f Dockerfile.python -t python-system-info .
+Pornește containerul:
+
+
+docker run --name python-container -d python-system-info
+Here's how to create a docker-compose.yml file to deploy both the Bash and Python scripts as services using Docker Compose. This deployment will use the two Dockerfiles created earlier.
+
+Docker Compose Setup
+In the same directory as your Dockerfiles (Dockerfile.bash and Dockerfile.python), create a file named docker-compose.yml with the following content:
+version: '3.8'
 
 services:
   bash-service:
     build:
       context: .
       dockerfile: Dockerfile.bash
-    container_name: bash-container
-    restart: always
-    volumes:
-      - ./system_info.sh:/system_info.sh
-    command: /system_info.sh
-
+    container_name: bash-container-v2
+    
   python-service:
     build:
       context: .
       dockerfile: Dockerfile.python
-    container_name: python-container
-    restart: always
-    volumes:
-      - ./system_info.py:/system_info.py
-    command: python /system_info.py
-Deployment Steps
-1. Install Ansible
-Ensure Ansible is installed on your local machine. Use the following command to install:
+    container_name: python-container-v2
 
-bash
-Copy code
-sudo apt install ansible
-2. Set Up Ansible Inventory File
-Create an inventory file (hosts.ini) to specify the target server for deployment.
 
-Example hosts.ini:
-
-ini
-Copy code
-[servers]
-your-server-ip ansible_ssh_user=your-user
-Replace your-server-ip with the IP of your server, and your-user with the SSH user.
-
-3. Run the Ansible Playbook
-Execute the following command to deploy the application:
-
-bash
-Copy code
-ansible-playbook -i hosts.ini deploy.yml
-This playbook will:
-
-Install Docker and Docker Compose on the target machine.
-Clone the project repository to /opt/system-info.
-Build the Docker images for the Bash and Python scripts.
-Start the containers using Docker Compose.
-4. Verify the Containers
-After deployment, you can check if the containers are running:
-docker ps
-You should see both containers running (bash-container and python-container).
-
-5. View Logs
-To view the logs of the running containers:
+Explanation
+bash-service: This service builds the image using Dockerfile.bash and runs the Bash script as defined in the Dockerfile.
+python-service: This service builds the image using Dockerfile.python and runs the Python script as defined in the Dockerfile.
+Each service will have its own container name (bash-container and python-container) for easy reference.
+Running the Services
+Start the services using Docker Compose:
+docker-compose up -d
+View the logs of both services to see the output from each script:
 docker-compose logs -f
-You will see the system information being printed by both scripts in the logs.
 
-6. Stopping the Deployment
-To stop the containers, run:
-docker-compose down
+Here’s a simple Ansible playbook that will deploy the two Docker Compose services described previously. The playbook will:
+
+Create a new directory on the target host.
+Copy the necessary files (Dockerfile.bash, Dockerfile.python, system_info.sh, system_info.py, and docker-compose.yml) to the target directory.
+Run docker-compose up -d to start the services.
+Step 1: Create the Required Files
+Ensure you have the following files in the same directory as your playbook:
+
+Dockerfile.bash
+Dockerfile.python
+system_info.sh
+system_info.py
+docker-compose.yml (with the container names modified if needed, as described in the previous steps)
+Step 2: Create the Ansible Playbook
+Create a file named deploy_docker_compose.yml with the following content:
+---
+- name: Deploy Docker Compose services
+  hosts: target_host  # Replace with your target host group or hostname
+  become: yes
+
+  tasks:
+    - name: Ensure deployment directory exists
+      file:
+        path: /opt/docker_compose_services  # Specify the target directory
+        state: directory
+        mode: '0755'
+
+    - name: Copy Dockerfile.bash
+      copy:
+        src: Dockerfile.bash
+        dest: /opt/docker_compose_services/Dockerfile.bash
+
+    - name: Copy Dockerfile.python
+      copy:
+        src: Dockerfile.python
+        dest: /opt/docker_compose_services/Dockerfile.python
+
+    - name: Copy system_info.sh
+      copy:
+        src: system_info.sh
+        dest: /opt/docker_compose_services/system_info.sh
+        mode: '0755'
+
+    - name: Copy system_info.py
+      copy:
+        src: system_info.py
+        dest: /opt/docker_compose_services/system_info.py
+        mode: '0755'
+
+    - name: Copy docker-compose.yml
+      copy:
+        src: docker-compose.yml
+        dest: /opt/docker_compose_services/docker-compose.yml
+
+    - name: Run Docker Compose to deploy services
+      shell: docker-compose up -d
+      args:
+        chdir: /opt/docker_compose_services
 
 
+Explanation
+path: Specifies the directory where the files will be stored (here it’s /opt/docker_compose_services). You can change this path as needed.
+copy tasks: Copy each required file to the target directory.
+shell task: Runs docker-compose up -d inside the specified directory to start the services.
+Step 3: Run the Playbook
+Execute the playbook with the following command, replacing target_host with the actual host you want to deploy to:
 
-
+ansible-playbook -i inventory deploy_docker_compose.yml
 
 
